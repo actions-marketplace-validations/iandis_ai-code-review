@@ -168,35 +168,63 @@ class InputProcessor {
         this._githubAPI = new GitHubAPI(this._githubToken);
         const pullRequestData = await this._githubAPI.getPullRequest(this._owner, this._repo, this._pullNumber);
         this._headCommit = pullRequestData.head.sha;
-        this._baseCommit = pullRequestData.base.sha;
+
+        // pullRequestData.base.sha is the tip of the base branch as of PR creation; it never
+        // advances as the base branch moves on, so it is not the merge base. Once the base branch
+        // is merged into the PR branch that stale SHA becomes an ancestor of head, and any
+        // three-dot compare against it degenerates into a plain two-dot diff carrying every
+        // upstream change the merge pulled in.
+        const mergeBase = await this._githubAPI.getMergeBase(
+            this._owner,
+            this._repo,
+            pullRequestData.base.ref,
+            this._headCommit
+        );
+        this._baseCommit = mergeBase || pullRequestData.base.sha;
     }
 
     async _processChangedFiles() {
+        // The authoritative PR diff. Files that only reached the PR branch through a merge of the
+        // base branch are identical on both sides of the merge base, so they are absent here.
+        const prFiles = await this._githubAPI.getPullRequestFiles(this._owner, this._repo, this._pullNumber);
+
         const comments = await this._githubAPI.listPRComments(this._owner, this._repo, this._pullNumber);
         const lastReviewComment = [...comments].reverse().find(c => c.body && c.body.startsWith(AI_REVIEW_COMMENT_PREFIX));
 
+        let changedFiles = prFiles;
+
         if (lastReviewComment) {
             core.info(`Found last review comment: ${lastReviewComment.body.split("\n")[0]}`);
-            const newBaseCommit = lastReviewComment.body
+            const lastReviewedCommit = lastReviewComment.body
                 .split(SUMMARY_SEPARATOR)[0]
                 .replace(AI_REVIEW_COMMENT_PREFIX, "")
                 .split(" ")[0]
                 .trim();
 
-            if (newBaseCommit) {
-                core.info(`New base commit ${newBaseCommit}. Incremental review will be performed`);
-                this._baseCommit = newBaseCommit;
+            if (lastReviewedCommit === this._headCommit) {
+                core.info("Head commit was already reviewed, nothing new to review");
+                changedFiles = [];
+            } else if (lastReviewedCommit) {
+                core.info(`Incremental review since ${lastReviewedCommit}`);
+                try {
+                    const touchedFiles = await this._githubAPI.getFilesBetweenCommits(
+                        this._owner,
+                        this._repo,
+                        lastReviewedCommit,
+                        this._headCommit
+                    );
+                    const touchedNames = new Set(touchedFiles.map(file => file.filename));
+                    // Intersect: review a file only if it is genuinely part of the PR diff AND was
+                    // touched since the previous review. Anything the incremental compare picked up
+                    // from the base branch is missing from prFiles and drops out here.
+                    changedFiles = prFiles.filter(file => touchedNames.has(file.filename));
+                } catch (error) {
+                    core.warning(`Incremental diff failed (${error.message}), falling back to the full PR diff`);
+                }
             }
         } else {
             core.info("No previous review comments found, reviewing all files in PR");
         }
-
-        const changedFiles = await this._githubAPI.getFilesBetweenCommits(
-            this._owner,
-            this._repo,
-            this._baseCommit,
-            this._headCommit
-        );
 
         this._filteredDiffs = this._filterChangedFiles(
             changedFiles,
@@ -206,7 +234,7 @@ class InputProcessor {
             this._excludePaths
         );
 
-        core.info(`Found ${this._filteredDiffs.length} files to review`);
+        core.info(`Found ${this._filteredDiffs.length} files to review (PR diff: ${prFiles.length})`);
     }
 
     _filterChangedFiles(changedFiles, includeExtensions, excludeExtensions, includePaths, excludePaths) {

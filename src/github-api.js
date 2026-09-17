@@ -195,6 +195,42 @@ class GitHubAPI {
         });
         return comparison.files || [];
     }
+
+    /**
+     * Returns the pull request's own diff — exactly what the "Files changed" tab shows.
+     * GitHub computes it against the merge base, so commits that merely merge the base
+     * branch into the PR branch contribute nothing. Paginated, so it is not capped at the
+     * 300 file limit of compareCommits.
+     */
+    async getPullRequestFiles(owner, repo, prNumber) {
+        core.info(`getPullRequestFiles(${prNumber})`);
+        const files = await this.octokit.paginate(
+            this.octokit.rest.pulls.listFiles,
+            { owner, repo, pull_number: prNumber, per_page: 100 }
+        );
+        return files;
+    }
+
+    /**
+     * Resolves the merge base between the current tip of the base branch and the given head.
+     * Returns null when it cannot be determined, so callers can fall back.
+     */
+    async getMergeBase(owner, repo, baseRef, headSha) {
+        core.info(`getMergeBase(${baseRef}, ${headSha})`);
+        try {
+            const { data: comparison } = await this.octokit.rest.repos.compareCommits({
+                owner,
+                repo,
+                base: baseRef,
+                head: headSha,
+                per_page: 1,
+            });
+            return comparison.merge_base_commit?.sha ?? null;
+        } catch (error) {
+            core.warning(`Merge base lookup failed: ${error.message}`);
+            return null;
+        }
+    }
 }
 
 module.exports = GitHubAPI;
