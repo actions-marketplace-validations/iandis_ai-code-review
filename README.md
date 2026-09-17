@@ -76,9 +76,13 @@ on:
 jobs:
   ai_code_review:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
     steps:
     - name: AI Code Review
-      uses: AleksandrFurmenkovOfficial/ai-code-review@v1.0
+      uses: iandis/ai-code-review@v1.0
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         owner: ${{ github.repository_owner }}
@@ -102,9 +106,13 @@ on:
 jobs:
   ai_code_review:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
     steps:
     - name: AI Code Review
-      uses: AleksandrFurmenkovOfficial/ai-code-review@v1.0
+      uses: iandis/ai-code-review@v1.0
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         owner: ${{ github.repository_owner }}
@@ -128,9 +136,13 @@ on:
 jobs:
   ai_code_review:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
     steps:
     - name: AI Code Review
-      uses: AleksandrFurmenkovOfficial/ai-code-review@v1.0
+      uses: iandis/ai-code-review@v1.0
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         owner: ${{ github.repository_owner }}
@@ -154,9 +166,13 @@ on:
 jobs:
   ai_code_review:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
     steps:
     - name: AI Code Review
-      uses: AleksandrFurmenkovOfficial/ai-code-review@v1.0
+      uses: iandis/ai-code-review@v1.0
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         owner: ${{ github.repository_owner }}
@@ -180,9 +196,13 @@ on:
 jobs:
   ai_code_review:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
     steps:
     - name: AI Code Review
-      uses: AleksandrFurmenkovOfficial/ai-code-review@v1.0
+      uses: iandis/ai-code-review@v1.0
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         owner: ${{ github.repository_owner }}
@@ -206,9 +226,13 @@ on:
 jobs:
   ai_code_review:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
     steps:
     - name: AI Code Review
-      uses: AleksandrFurmenkovOfficial/ai-code-review@v1.0
+      uses: iandis/ai-code-review@v1.0
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         owner: ${{ github.repository_owner }}
@@ -232,9 +256,13 @@ on:
 jobs:
   ai_code_review:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
     steps:
     - name: AI Code Review
-      uses: AleksandrFurmenkovOfficial/ai-code-review@v1.0
+      uses: iandis/ai-code-review@v1.0
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         owner: ${{ github.repository_owner }}
