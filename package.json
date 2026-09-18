@@ -45,7 +45,7 @@
   },
   "homepage": "https://github.com/iandis/ai-code-review#readme",
   "dependencies": {
-    "@actions/core": "^2.0.2",
+    "@actions/core": "^3.0.1",
     "@actions/github": "^7.0.0",
     "@anthropic-ai/sdk": "^0.91.1",
     "@google/generative-ai": "^0.24.1",
