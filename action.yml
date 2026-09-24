@@ -82,6 +82,9 @@ inputs:
   review_rules_file:
     description: 'Path to a file containing custom review rules to be added to the AI system prompt.'
     required: false
+  effort:
+    description: 'Optional reasoning effort level passed to the model (e.g., low, medium, high). Anthropic: sent as output_config.effort (low, medium, high, xhigh, max). OpenAI-compatible providers: sent as reasoning_effort. Leave empty to use the model default.'
+    required: false
 
 runs:
   using: 'node24'
