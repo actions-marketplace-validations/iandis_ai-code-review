@@ -32,12 +32,13 @@ class SimpleMutex {
 }
 
 class BaseAIAgent {
-    constructor(apiKey, fileContentGetter, fileCommentator, model, reviewRulesContent) {
+    constructor(apiKey, fileContentGetter, fileCommentator, model, reviewRulesContent, effort = null) {
         this.apiKey = apiKey;
         this.fileContentGetter = fileContentGetter;
         this.fileCommentator = fileCommentator;
         this.model = model;
         this.reviewRulesContent = reviewRulesContent;
+        this.effort = effort || null;
         this.fileCache = new Map();
         this.cacheMutex = new SimpleMutex();
         this.MAX_CACHE_ENTRIES = constants.MAX_CACHE_ENTRIES;

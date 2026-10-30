@@ -7,13 +7,24 @@ const { MAX_REVIEW_ITERATIONS } = require("./constants");
 const c_max_completion_tokens = 8192;
 
 class AnthropicAgent extends BaseAIAgent {
-    constructor(apiKey, fileContentGetter, fileCommentator, model, reviewRulesContent) {
-        super(apiKey, fileContentGetter, fileCommentator, model, reviewRulesContent);
+    constructor(apiKey, fileContentGetter, fileCommentator, model, reviewRulesContent, effort = null) {
+        super(apiKey, fileContentGetter, fileCommentator, model, reviewRulesContent, effort);
         this.anthropic = new Anthropic({ apiKey });
     }
 
     initialize() {
         return true;
+    }
+
+    buildRequest(tools, reviewState) {
+        return {
+            model: this.model,
+            max_tokens: c_max_completion_tokens,
+            system: this.getSystemPrompt(),
+            messages: this.applyCacheControl(reviewState.messageHistory),
+            tools: tools,
+            ...(this.effort ? { output_config: { effort: this.effort } } : {})
+        };
     }
 
     async doReview(changedFiles) {
@@ -182,13 +193,7 @@ class AnthropicAgent extends BaseAIAgent {
 
             reviewState.messageHistory.push(initialUserMessage);
 
-            const initialMessage = await this.anthropic.messages.create({
-                model: this.model,
-                max_tokens: c_max_completion_tokens,
-                system: this.getSystemPrompt(),
-                messages: this.applyCacheControl(reviewState.messageHistory),
-                tools: tools
-            });
+            const initialMessage = await this.anthropic.messages.create(this.buildRequest(tools, reviewState));
 
             return await this.handleMessageResponse(initialMessage, tools, reviewState);
         } catch (error) {
@@ -284,13 +289,7 @@ class AnthropicAgent extends BaseAIAgent {
             return reviewState.summary;
         }
 
-        const nextMessage = await this.anthropic.messages.create({
-            model: this.model,
-            max_tokens: c_max_completion_tokens,
-            system: this.getSystemPrompt(),
-            messages: this.applyCacheControl(reviewState.messageHistory),
-            tools: tools
-        });
+        const nextMessage = await this.anthropic.messages.create(this.buildRequest(tools, reviewState));
 
         return this.handleMessageResponse(nextMessage, tools, reviewState);
     }

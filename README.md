@@ -48,6 +48,9 @@ Perform code review using various AI models from OpenAI, Anthropic, Google, X, D
 ***perplexity_model*** - Optional. The Perplexity model name (e.g., sonar, sonar-pro, r1-1776, sonar-reasoning-pro). Default is 'sonar-reasoning-pro'.
 
 
+***effort*** - Optional. Reasoning effort level passed as-is to the selected model (e.g., low, medium, high). For Anthropic it is sent as `output_config.effort` (low, medium, high, xhigh, max); for OpenAI, Google, X, Deepseek and Perplexity it is sent as `reasoning_effort` (accepted values depend on the provider). Only reasoning-capable models support it — setting it on an unsupported model (e.g., claude-sonnet-4-5-20250929) makes the API request fail. Leave empty to use the model's default.
+
+
 ***include_extensions*** - Optional. A comma-separated list of file extensions to include in the review (e.g., ".py,.js,.html"). If not specified, the action will consider all file types.
 
 ***exclude_extensions*** - Optional. A comma-separated list of file extensions to exclude from the review.

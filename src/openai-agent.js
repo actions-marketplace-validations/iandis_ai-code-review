@@ -13,8 +13,8 @@ const { MAX_REVIEW_ITERATIONS } = require("./constants");
  * **Public API is unchanged**; only internal loop/iteration logic was fixed.
  */
 class OpenAIAgent extends BaseAIAgent {
-    constructor(apiKey, fileContentGetter, fileCommentator, model, reviewRulesContent, baseURL = null) {
-        super(apiKey, fileContentGetter, fileCommentator, model, reviewRulesContent);
+    constructor(apiKey, fileContentGetter, fileCommentator, model, reviewRulesContent, baseURL = null, effort = null) {
+        super(apiKey, fileContentGetter, fileCommentator, model, reviewRulesContent, effort);
 
         if (!baseURL || baseURL.trim() === "") {
             core.info("Using default OpenAI API URL");
@@ -82,6 +82,22 @@ class OpenAIAgent extends BaseAIAgent {
     /* ------------------------------------------------------------------ */
     initialize() {
         return true;
+    }
+
+    buildRequest(reviewState) {
+        return {
+            model: this.model,
+            messages: [
+                { role: "system", content: this.getSystemPrompt() },
+                ...reviewState.messageHistory
+            ],
+            tools: this.tools,
+            ...(this.effort ? { reasoning_effort: this.effort } : {})
+        };
+    }
+
+    describeModel() {
+        return this.effort ? `${this.model} (effort: ${this.effort})` : this.model;
     }
 
     /**
@@ -187,15 +203,8 @@ class OpenAIAgent extends BaseAIAgent {
 
                 /* ── follow-up call ── */
                 try {
-                    core.info(`Sending follow-up request to OpenAI with model: ${this.model}`);
-                    const followUp = await this.openai.chat.completions.create({
-                        model: this.model,
-                        messages: [
-                            { role: "system", content: this.getSystemPrompt() },
-                            ...reviewState.messageHistory
-                        ],
-                        tools: this.tools
-                    });
+                    core.info(`Sending follow-up request to OpenAI with model: ${this.describeModel()}`);
+                    const followUp = await this.openai.chat.completions.create(this.buildRequest(reviewState));
                     message = followUp.choices[0].message; // continue loop
                     continue;
                 } catch (error) {
@@ -255,15 +264,8 @@ class OpenAIAgent extends BaseAIAgent {
         });
 
         try {
-            core.info(`Sending initial request to OpenAI with model: ${this.model}`);
-            const initial = await this.openai.chat.completions.create({
-                model: this.model,
-                messages: [
-                    { role: "system", content: this.getSystemPrompt() },
-                    ...reviewState.messageHistory
-                ],
-                tools: this.tools
-            });
+            core.info(`Sending initial request to OpenAI with model: ${this.describeModel()}`);
+            const initial = await this.openai.chat.completions.create(this.buildRequest(reviewState));
             const initialMessage = initial.choices[0].message;
             reviewSummary = await this.handleMessageResponse(initialMessage, reviewState);
             return reviewSummary;
